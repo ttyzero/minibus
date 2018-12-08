@@ -9,3 +9,8 @@ UIs / shell scripts and terminal multiplexers.
 
 The bus is still in the shop, please come back later..
 
+## ttyZero
+
+Minibus is part of the ttyZero project
+
+![ttyZero Logo](/docs/ttyzero_animated.png?raw=true)
