@@ -195,16 +195,3 @@ func (bus *Minibus) closeChannel(path string) {
 type Sock struct {
 	pid int
 }
-
-func handleServerConnection(c *net.UnixConn) {
-	// receive the message
-	buff := make([]byte, 1024)
-	oob := make([]byte, 1024)
-
-	_, _, _, _, err := c.ReadMsgUnix(buff, oob)
-	if err != nil {
-		fmt.Println(err)
-
-	}
-	fmt.Println(oob, buff)
-}
