@@ -1,12 +1,15 @@
 package lib
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"syscall"
 
@@ -58,6 +61,10 @@ func Start(workDir string) {
 	<-bus.stop
 }
 
+var (
+	TOPIC_RE = regexp.MustCompile("^(\\w+):(.*)")
+)
+
 type Minibus struct {
 	path     string
 	in       chan (string)
@@ -76,6 +83,7 @@ func NewMinibus(path string) (*Minibus, error) {
 	bus := Minibus{path, in, stop, map[string]*Channel{}, w}
 	bus.fsw.Add(path)
 	go bus.monitor()
+	go bus.datagramListener()
 	go func() {
 		sigint := make(chan os.Signal, 2)
 		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
@@ -124,6 +132,52 @@ func (bus *Minibus) monitor() {
 	}
 }
 
+func (bus *Minibus) datagramListener() {
+	sockPath := filepath.Join(bus.path, "minibus.sock")
+
+	err := syscall.Unlink(sockPath)
+	if err != nil {
+		log.Println("Unlink()", err)
+	}
+
+	addr, err := net.ResolveUnixAddr("unixgram", sockPath)
+	if err != nil {
+		println("Could not resolve unix socket: " + err.Error())
+		os.Exit(1)
+	}
+
+	// listen on the socket
+	conn, err := net.ListenUnixgram("unixgram", addr)
+	if err != nil {
+		println("Could not listen on unix socket datagram: " + err.Error())
+		os.Exit(1)
+	}
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		bus.handleMsg(scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+	}
+
+	// close socket when we finish
+	defer conn.Close()
+}
+
+func (bus *Minibus) handleMsg(data string) {
+	var topic, msg string
+	log.Println("----------------------")
+	m := TOPIC_RE.FindStringSubmatch(data)
+	if len(m) == 3 {
+		topic = m[1]
+		msg = m[2]
+		log.Printf("[%s]:%s", topic, msg)
+	} else {
+		log.Printf("cannot parse: %s", data)
+	}
+
+}
+
 func (bus *Minibus) newChannel(path string) {
 	ch, err := NewChannel(path, bus.stop)
 	if err != nil {
@@ -140,4 +194,17 @@ func (bus *Minibus) closeChannel(path string) {
 
 type Sock struct {
 	pid int
+}
+
+func handleServerConnection(c *net.UnixConn) {
+	// receive the message
+	buff := make([]byte, 1024)
+	oob := make([]byte, 1024)
+
+	_, _, _, _, err := c.ReadMsgUnix(buff, oob)
+	if err != nil {
+		fmt.Println(err)
+
+	}
+	fmt.Println(oob, buff)
 }
