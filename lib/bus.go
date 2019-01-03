@@ -31,19 +31,15 @@ func Start(workDir string) {
 	if _, err := os.Stat(pidFile); !os.IsNotExist(err) {
 		data, _ := ioutil.ReadFile(pidFile)
 		oldPid, _ := strconv.Atoi(string(data))
-		oldProc, err := os.FindProcess(oldPid)
-		if err == nil {
-			err := oldProc.Signal(syscall.Signal(0))
-			if err == nil {
-				fmt.Fprintf(os.Stderr, "Another bus is running '%d'\n", oldPid)
-				os.Exit(1)
-			}
-			log.Printf("Removing stale pidfile '%s'\n", pidFile)
-			err = os.Remove(pidFile)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Cannot remove stale pidfile '%d'\n", pidFile)
-				os.Exit(1)
-			}
+		if pidActive(oldPid) {
+			fmt.Fprintf(os.Stderr, "Another bus is running '%d'\n", oldPid)
+			s.Exit(1)
+		}
+		log.Printf("Removing stale pidfile '%s'\n", pidFile)
+		err = os.Remove(pidFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Cannot remove stale pidfile '%d'\n", pidFile)
+			os.Exit(1)
 		}
 	}
 
@@ -62,7 +58,8 @@ func Start(workDir string) {
 }
 
 var (
-	TOPIC_RE = regexp.MustCompile("^(\\w+):(.*)")
+	TOPIC_RE    = regexp.MustCompile("^(\\w+):(.*)")
+	SOCKFILE_RE = regexp.MustCompile("^([0-9]*)-([-_\\w]*).sock")
 )
 
 type Minibus struct {
