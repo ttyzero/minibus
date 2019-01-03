@@ -8,13 +8,15 @@ UIs / shell scripts and terminal multiplexers.
 ## Messages
 
 Messages are delivered to minibus as datagram packets containing utf8 strings
-prefixed with a channel name, followed by a ':'. Messages are delivered to any
-listeners on the channel specified. If a message sent to minibus which does not
+prefixed with a channel name, followed by a `:`. Messages are delivered to any
+listeners on the channel specified. If a message sent to minibus does not
 match the `chan: msg` format it will be dropped.
 
-Messages can be sent by sending a datagram packet to the `minibus.sock` file in
+Messages can be delivered by sending a datagram packet to the `minibus.sock` file in
 the minibus working directory, usually `~/.cache/minibus` on linux, or 
-`~/Library/Caches` on macOS. Some shell commands capable of making this request 
+`~/Library/Caches/minibus` on macOS. 
+
+Some shell commands capable of making this request 
 are `nc` & `socat`, also see `tzmsg` documented below.
 
 ## Channels
