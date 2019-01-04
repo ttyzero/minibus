@@ -12,9 +12,9 @@ prefixed with a channel name, followed by a `:`. Messages are delivered to any
 listeners on the channel specified. If a message sent to minibus does not
 match the `chan: msg` format it will be dropped.
 
-Messages can be delivered by sending a datagram packet to the `minibus.sock` file in
-the minibus working directory, usually `~/.cache/minibus` on linux, or 
-`~/Library/Caches/minibus` on macOS. 
+Messages can be delivered by sending a datagram packet to the `minibus` UNIX 
+datagram socket file in the minibus working directory, usually `~/.cache/minibus` 
+on linux, or `~/Library/Caches/minibus` on macOS. 
 
 Some shell commands capable of making this request 
 are `nc` & `socat`, also see `tzmsg` documented below.
@@ -30,7 +30,7 @@ bearing the channel name.
 ## Client connections 
 
 To listen to a channel, a process should establish a datagram socket in the minubus working 
-directory with the name `$PID-$CHANNEL.sock` where PID is the process ID of the 
+directory with the name `$PID-$CHANNEL` where PID is the process ID of the 
 connecting process, and CHANNEL is the name of the channel to recieve Messages
 for.
 
@@ -43,7 +43,7 @@ message to a channel.
 #### Using tzmsg
 
 tzmsg with only one argument assumes the argument is a channel and accepts
-stdin and sends each 'line' of input to the channel via the `minibus.sock`
+stdin and sends each 'line' of input to the channel via the `minibus`
 datagram socket.
 
 tzmsg with multiple arguments assumes the first argument is the channel and 

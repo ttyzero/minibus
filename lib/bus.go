@@ -33,7 +33,7 @@ func Start(workDir string) {
 		oldPid, _ := strconv.Atoi(string(data))
 		if pidActive(oldPid) {
 			fmt.Fprintf(os.Stderr, "Another bus is running '%d'\n", oldPid)
-			s.Exit(1)
+			os.Exit(1)
 		}
 		log.Printf("Removing stale pidfile '%s'\n", pidFile)
 		err = os.Remove(pidFile)
@@ -58,8 +58,8 @@ func Start(workDir string) {
 }
 
 var (
-	TOPIC_RE    = regexp.MustCompile("^(\\w+):(.*)")
-	SOCKFILE_RE = regexp.MustCompile("^([0-9]*)-([-_\\w]*).sock")
+	MSG_RE      = regexp.MustCompile("^(\\w+):(.*)")
+	SOCKFILE_RE = regexp.MustCompile("^([0-9]*)-([-_\\.\\w]*)")
 )
 
 type Minibus struct {
@@ -79,8 +79,8 @@ func NewMinibus(path string) (*Minibus, error) {
 	stop := make(chan (bool))
 	bus := Minibus{path, in, stop, map[string]*Channel{}, w}
 	bus.fsw.Add(path)
-	go bus.monitor()
 	go bus.datagramListener()
+	go bus.monitor()
 	go func() {
 		sigint := make(chan os.Signal, 2)
 		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
@@ -101,22 +101,15 @@ func (bus *Minibus) monitor() {
 
 			// catch create channels
 			if event.Op&fsnotify.Create == fsnotify.Create {
-				if filepath.Dir(event.Name) == bus.path {
-					finfo, err := os.Stat(event.Name)
-					if err != nil {
-						log.Printf("Cannot stat '%s'", event.Name)
-						log.Println(err)
-					}
-					if finfo.IsDir() {
-						bus.newChannel(event.Name)
-					}
+				// ignore our own minibus socket
+				if filepath.Base(event.Name) != "minibus" {
+					bus.add(event.Name)
 				}
 			}
 
 			//catch potential removed channels
 			if event.Op&fsnotify.Remove == fsnotify.Remove {
 				if filepath.Dir(event.Name) == bus.path {
-					bus.closeChannel(event.Name)
 				}
 			}
 
@@ -129,8 +122,32 @@ func (bus *Minibus) monitor() {
 	}
 }
 
+func (bus *Minibus) add(path string) {
+	if filepath.Dir(path) == bus.path {
+		finfo, err := os.Stat(path)
+		if err != nil {
+			log.Printf("Cannot stat '%s'", path)
+			log.Println(err)
+		}
+
+		if finfo.Mode()&os.ModeSocket != 0 {
+			m := SOCKFILE_RE.FindStringSubmatch(filepath.Base(path))
+			if len(m) == 3 {
+				pid := m[1]
+				chn := m[2]
+				if _, ok := bus.channels[chn]; !ok {
+					bus.channels[chn] = NewChannel(chn, bus.stop)
+				}
+				bus.channels[chn].Connect(path)
+				log.Printf("[%s]:%s", chn, pid)
+			} else {
+				log.Printf("cannot parse filename, should be $PID-$CHANNEL: %s", filepath.Base(path))
+			}
+		}
+	}
+}
 func (bus *Minibus) datagramListener() {
-	sockPath := filepath.Join(bus.path, "minibus.sock")
+	sockPath := filepath.Join(bus.path, "minibus")
 
 	err := syscall.Unlink(sockPath)
 	if err != nil {
@@ -162,30 +179,16 @@ func (bus *Minibus) datagramListener() {
 }
 
 func (bus *Minibus) handleMsg(data string) {
-	var topic, msg string
+	var chn, msg string
 	log.Println("----------------------")
-	m := TOPIC_RE.FindStringSubmatch(data)
+	m := MSG_RE.FindStringSubmatch(data)
 	if len(m) == 3 {
-		topic = m[1]
+		chn = m[1]
 		msg = m[2]
-		log.Printf("[%s]:%s", topic, msg)
+		log.Printf("[%s]:%s", chn, msg)
 	} else {
 		log.Printf("cannot parse: %s", data)
 	}
-
-}
-
-func (bus *Minibus) newChannel(path string) {
-	ch, err := NewChannel(path, bus.stop)
-	if err != nil {
-		log.Println("couldn't open channel", err)
-		return
-	}
-	bus.channels[path] = ch
-}
-
-func (bus *Minibus) closeChannel(path string) {
-	log.Printf("Destroyed channel '%s'", path)
 
 }
 
