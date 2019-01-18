@@ -136,9 +136,9 @@ func (bus *Minibus) add(path string) {
 				pid := m[1]
 				chn := m[2]
 				if _, ok := bus.channels[chn]; !ok {
-					bus.channels[chn] = NewChannel(chn, bus.stop)
+					bus.channels[chn] = NewChannel(path, bus.stop)
 				}
-				bus.channels[chn].Connect(path)
+				go bus.channels[chn].Connect(path)
 				log.Printf("[%s]:%s", chn, pid)
 			} else {
 				log.Printf("cannot parse filename, should be $PID-$CHANNEL: %s", filepath.Base(path))
@@ -186,6 +186,10 @@ func (bus *Minibus) handleMsg(data string) {
 		chn = m[1]
 		msg = m[2]
 		log.Printf("[%s]:%s", chn, msg)
+
+		if _, ok := bus.channels[chn]; ok {
+			bus.channels[chn].Send <- []byte(msg)
+		}
 	} else {
 		log.Printf("cannot parse: %s", data)
 	}
