@@ -12,7 +12,7 @@ prefixed with a channel name, followed by a `:`. Messages are delivered to any
 listeners on the channel specified. If a message sent to minibus does not
 match the `chan: msg` format it will be dropped.
 
-Messages can be delivered by sending a datagram packet to the `minibus` UNIX 
+Messages are delivered by sending a datagram packet to the `minibus` UNIX 
 datagram socket file in the minibus working directory, usually `~/.cache/minibus` 
 on linux, or `~/Library/Caches/minibus` on macOS. 
 
@@ -70,7 +70,14 @@ tzmsg bar 'this is a message'
 tzmsg bar: this is a message
 ```
 
-
-## Minibus is part of the ttyZero project
-
-![ttyZero Logo](/docs/ttyzero_animated.png?raw=true)
+<br/><br/>
+<table>
+<tr><td>
+<img src='https://raw.githubusercontent.com/ttyzero/logo/master/assets/ttyzero_animated.png' alt='ttyZero Logo' title='ttyZero Logo'/>
+</td>
+<td style='padding-left: 10em'>
+<h2>Minibus-go is part of the <a href='http://github.com/ttyzero'>ttyZero Project</a></h2>
+<b>Minibus-go</b> is <i>(c) 2019 ttyZero authors</i> <br/>
+ and is available under the <b>MIT license</b>. 
+</td></tr>
+</table>
