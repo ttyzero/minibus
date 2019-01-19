@@ -77,7 +77,7 @@ tzmsg bar: this is a message
 </td>
 <td style='padding-left: 10em'>
 <h2>Minibus is part of the <a href='http://github.com/ttyzero'>ttyZero Project</a></h2>
-<b>Minibus</b> is <i>(c) 2019 ttyZero authors</i> <br/>
+<b>Minibus</b> is <i>(c) 2018 ttyZero authors</i> <br/>
  and is available under the <b>MIT license</b>. 
 </td></tr>
 </table>
