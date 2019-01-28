@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"os"
-	"path/filepath"
-	"strconv"
+
+	minibus "github.com/ttyzero/minibus-go"
 )
 
 func main() {
@@ -15,40 +14,31 @@ func main() {
 		os.Exit(1)
 	}
 	channel := os.Args[1]
-	fmt.Println("Connecting to channel:", channel)
-	workDir, err := os.UserCacheDir()
-	if err != nil {
-		panic(err)
-	}
-	pid := []byte(strconv.Itoa(os.Getpid()))
 
-	sockPath := filepath.Join(workDir, "minibus", fmt.Sprintf("%s-%s", pid, channel))
-	fmt.Println(sockPath)
+	mb := minibus.New(minibus.Default)
 
-	addr, err := net.ResolveUnixAddr("unixgram", sockPath)
-	if err != nil {
-		fmt.Println("Could not resolve unix socket: " + err.Error())
-		os.Exit(1)
-	}
-
-	c, err := net.ListenUnixgram("unixgram", addr)
-	if err != nil {
-		fmt.Println("what" + err.Error())
-		os.Exit(1)
-	}
-
-	defer func() {
-		c.Close()
-		os.Remove(sockPath)
-	}()
-
-	for {
-		var buf [1024]byte
-		n, err := c.Read(buf[:])
+	/*
+		err := mb.Send(channel, []byte("Sending"))
 		if err != nil {
-			panic(err)
+			fmt.Println(err)
 		}
-		fmt.Printf("%s\n", string(buf[:n]))
+	*/
+	chTest, closeTest, err := mb.OpenChannel(channel)
+	if err != nil {
+		fmt.Println("faul", err)
+		os.Exit(1)
 	}
 
+	go func() {
+		for {
+			select {
+			case msg := <-chTest:
+				fmt.Println("Got a msg:", msg)
+			case <-closeTest:
+				fmt.Println("closing here..")
+				return
+			}
+		}
+	}()
+	<-closeTest
 }

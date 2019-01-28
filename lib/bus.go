@@ -137,9 +137,9 @@ func (bus *Minibus) add(path string) {
 				chn := m[2]
 				if _, ok := bus.channels[chn]; !ok {
 					bus.channels[chn] = NewChannel(path, bus.stop)
+					log.Printf("created new channel [%s] for initial conn %s", chn, pid)
 				}
 				go bus.channels[chn].Connect(path)
-				log.Printf("[%s]:%s", chn, pid)
 			} else {
 				log.Printf("cannot parse filename, should be $PID-$CHANNEL: %s", filepath.Base(path))
 			}

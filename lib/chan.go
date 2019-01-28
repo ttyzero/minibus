@@ -29,8 +29,9 @@ func (t *Channel) accept() {
 		case d := <-t.Send:
 			for _, sock := range t.socks {
 				_, err := sock.Write(d)
+				_, err = sock.Write([]byte("\n"))
 				if err != nil {
-					log.Fatal("write error:", err)
+					log.Println("TODO (remove dead sockets) write error:", err)
 				}
 			}
 		case <-t.stop:
@@ -49,7 +50,7 @@ func (t *Channel) Connect(sockPath string) {
 
 	c, err := net.Dial("unixgram", sockPath)
 	if err != nil {
-		panic(err)
+		log.Printf("failed to dial %s", sockPath)
 	}
 	t.socks = append(t.socks, c)
 }
