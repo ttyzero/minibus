@@ -17,7 +17,7 @@ datagram socket file in the minibus working directory, usually `~/.cache/minibus
 on linux, or `~/Library/Caches/minibus` on macOS. 
 
 Some shell commands capable of making this request 
-are `nc` & `socat`, also see `tzmsg` documented below.
+are `nc` & `socat`, also see `tzpipe` documented below.
 
 ## Channels
 
@@ -34,41 +34,15 @@ directory with the name `$PID-$CHANNEL` where PID is the process ID of the
 connecting process, and CHANNEL is the name of the channel to recieve Messages
 for.
 
-## tzmsg
+## See also
 
-`tzmsg` is a companion command to Minibus which will stream anything on stdin to
-a given Minibus channel. It can also be used in single message mode to send one 
-message to a channel.
+[tzpipe](https://github.com/ttyzero/tzpipe) is a companion commandline utility for minibus which
+allows shell scripts and commandline access to minibus messages (send / recieve)
 
-#### Using tzmsg
+[minibus-go](https://github.com/ttyzero/minibus-go) is a Golang client library for communicating
+with a minibus service. It is designed for use in Golang TUI programs and serves as a reference
+implementation for minibus clients in other languages.
 
-tzmsg with only one argument assumes the argument is a channel and accepts
-stdin and sends each 'line' of input to the channel via the `minibus`
-datagram socket.
-
-tzmsg with multiple arguments assumes the first argument is the channel and 
-all subsequent arguments constitute the message.
-
-Any trailing colon on the end of the first argument is ignored, thus the channel
-delimiter is optional.
-
-#### Examples
-
-Redirecting the output of a command to a minibus channel 'foo':
-
-```bash
-./your-server | tzmsg foo
-```
-
-Sending a single message to a minibus channel 'bar':
-
-```bash
-tzmsg bar 'this is a message'
-```
-
-```bash
-tzmsg bar: this is a message
-```
 
 <br/><br/>
 <table>
